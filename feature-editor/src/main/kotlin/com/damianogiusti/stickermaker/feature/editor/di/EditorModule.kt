@@ -33,8 +33,11 @@ import com.damianogiusti.stickermaker.imaging.text.TextItemPainter
  * Editor ViewModel, use case and imaging bindings.
  * Imaging work runs on `Dispatchers.Default`, passed explicitly.
  */
-/** The one place to change if an app pastes WebP badly: PNG is the fallback. */
-private val CLIPBOARD_FORMAT = StickerImageFormat.WEBP
+/**
+ * PNG, not WebP: WhatsApp does not paste an `image/webp` clip, while it pastes the `image/png` clip
+ * Google Photos sets for its cutouts (checked on a Pixel 9 Pro, 2026-11-11).
+ */
+private val CLIPBOARD_FORMAT = StickerImageFormat.PNG
 
 val editorModule = module {
     single<SourceImageLoader> { AndroidSourceImageLoader(androidContext(), Dispatchers.Default) }

@@ -30,10 +30,10 @@ feature-editor/  cutting + text/outline screens, Copy use case, clipboard adapte
 Dependency direction: app → feature-editor → domain + core-ui; imaging → domain.
 
 Flow: Home ("Choose photo", Photo Picker) or an `ACTION_SEND` `image/*` share → editor → Copy.
-Copy writes `cacheDir/clipboard/<timestamp>.webp`, sets a content-URI clip (FileProvider
+Copy writes `cacheDir/clipboard/<timestamp>.png`, sets a content-URI clip (FileProvider
 `${applicationId}.clipboard.fileprovider`) and deletes the older files. The format is the
-`CLIPBOARD_FORMAT` constant in `editorModule`; switch it to `StickerImageFormat.PNG` if an app
-pastes WebP badly.
+`CLIPBOARD_FORMAT` constant in `editorModule`: PNG, because WhatsApp does not paste an
+`image/webp` clip (Google Photos also copies cutouts as `image/png`).
 
 ## Architecture
 
