@@ -92,8 +92,9 @@ internal fun StickerGalleryScreen(
     )
 }
 
+// A document URI: DocumentsUI on Android 17 ignores a bare tree URI here and opens the root.
 private fun initialFolderUri(source: WhatsAppSource): Uri =
-    DocumentsContract.buildTreeDocumentUri(EXTERNAL_STORAGE_AUTHORITY, source.documentId)
+    DocumentsContract.buildDocumentUri(EXTERNAL_STORAGE_AUTHORITY, source.documentId)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
