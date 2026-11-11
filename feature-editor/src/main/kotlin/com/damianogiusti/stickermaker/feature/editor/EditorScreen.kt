@@ -1,12 +1,11 @@
 package com.damianogiusti.stickermaker.feature.editor
 
 import android.content.ActivityNotFoundException
-import android.content.Context
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,14 +14,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import com.damianogiusti.stickermaker.feature.editor.cutting.CuttingActions
 import com.damianogiusti.stickermaker.feature.editor.cutting.CuttingContent
 import com.damianogiusti.stickermaker.feature.editor.text.TextEditorActions
@@ -31,29 +28,32 @@ import com.damianogiusti.stickermaker.imaging.source.SourceUri
 import com.damianogiusti.stickermaker.imaging.text.TextItemPainter
 import com.damianogiusti.stickermaker.ui.components.CenteredMessage
 import com.damianogiusti.stickermaker.ui.components.CenteredProgress
-import java.io.File
 
 /**
- * The whole editor: opens the picker for [source], then the cutting screen and the text screen,
- * and saves into the pack according to [target]. Needs `editorModule` in Koin.
+ * The whole editor: opens the Photo Picker for [EditorSource.PhotoPicker] (or loads the given image),
+ * then the cutting screen and the text screen, where Copy puts the sticker on the clipboard.
+ * [onClose] runs when the user leaves the editor. Needs `editorModule` in Koin.
  */
 @Composable
 fun EditorScreen(
-    packId: String,
     source: EditorSource,
-    target: EditorTarget,
-    onDone: () -> Unit,
-    onCancel: () -> Unit,
+    onClose: () -> Unit,
 ) {
-    val viewModel: EditorViewModel = koinViewModel(parameters = { parametersOf(packId, target) })
+    val viewModel: EditorViewModel = koinViewModel()
     val painter: TextItemPainter = koinInject()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val copiedMessage = stringResource(R.string.editor_copied)
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                EditorEvent.Done -> onDone()
-                EditorEvent.Cancelled -> onCancel()
+                EditorEvent.Copied -> {
+                    // A second Copy replaces the first message instead of queueing behind it.
+                    snackbarHostState.currentSnackbarData?.dismiss()
+                    launch { snackbarHostState.showSnackbar(copiedMessage) }
+                }
+                EditorEvent.Cancelled -> onClose()
                 EditorEvent.LaunchPicker -> Unit
             }
         }
@@ -65,11 +65,12 @@ fun EditorScreen(
     EditorContent(
         state = state,
         painter = painter,
+        snackbarHostState = snackbarHostState,
         cuttingActions = remember(viewModel) { cuttingActionsOf(viewModel) },
         textActions = remember(viewModel) { textActionsOf(viewModel) },
         onRetryLoad = viewModel::onRetryLoad,
         onPickAgain = viewModel::onPickAgainClicked,
-        onClose = onCancel,
+        onClose = onClose,
     )
 }
 
@@ -89,8 +90,8 @@ private fun cuttingActionsOf(viewModel: EditorViewModel) = CuttingActions(
 
 private fun textActionsOf(viewModel: EditorViewModel) = TextEditorActions(
     onBack = viewModel::onBackPressed,
-    onSave = viewModel::onSaveClicked,
-    onSaveErrorDismissed = viewModel::onSaveErrorDismissed,
+    onCopy = viewModel::onCopyClicked,
+    onCopyErrorDismissed = viewModel::onCopyErrorDismissed,
     onAddText = viewModel::onAddTextClicked,
     onEditingTextChanged = viewModel::onEditingTextChanged,
     onEditingConfirmed = viewModel::onEditingConfirmed,
@@ -110,30 +111,15 @@ private fun textActionsOf(viewModel: EditorViewModel) = TextEditorActions(
 
 @Composable
 private fun SourceLauncher(source: EditorSource, viewModel: EditorViewModel) {
-    val context = LocalContext.current
-    val onResult: (Uri?) -> Unit = { uri ->
+    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         if (uri == null) viewModel.onPickerCancelled() else viewModel.onImagePicked(SourceUri(uri.toString()))
-    }
-    val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia(), onResult)
-    val documentPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument(), onResult)
-    var cameraUri by rememberSaveable { mutableStateOf<String?>(null) }
-    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
-        val uri = cameraUri
-        if (taken && uri != null) viewModel.onImagePicked(SourceUri(uri)) else viewModel.onPickerCancelled()
     }
 
     val launchSource: () -> Unit = {
         try {
             when (source) {
-                EditorSource.Camera -> {
-                    val uri = newCameraUri(context)
-                    cameraUri = uri.toString()
-                    camera.launch(uri)
-                }
-                EditorSource.Gallery ->
+                EditorSource.PhotoPicker ->
                     photoPicker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                EditorSource.Files -> documentPicker.launch(arrayOf(IMAGE_MIME_TYPES))
-                EditorSource.Text -> viewModel.onTextSourceSelected()
                 is EditorSource.ImageUri -> viewModel.onImagePicked(SourceUri(source.uri.toString()))
             }
         } catch (_: ActivityNotFoundException) {
@@ -155,17 +141,11 @@ private fun SourceLauncher(source: EditorSource, viewModel: EditorViewModel) {
     }
 }
 
-/** A fresh file in the cache, shared with the camera app through [EditorFileProvider]. */
-private fun newCameraUri(context: Context): Uri {
-    val directory = File(context.cacheDir, CAMERA_DIRECTORY).apply { mkdirs() }
-    val file = File(directory, CAMERA_FILE_NAME).also { it.delete() }
-    return FileProvider.getUriForFile(context, "${context.packageName}.editor.fileprovider", file)
-}
-
 @Composable
 private fun EditorContent(
     state: EditorUiState,
     painter: TextItemPainter,
+    snackbarHostState: SnackbarHostState,
     cuttingActions: CuttingActions,
     textActions: TextEditorActions,
     onRetryLoad: () -> Unit,
@@ -177,7 +157,7 @@ private fun EditorContent(
         EditorUiState.LoadingImage -> CenteredProgress()
         is EditorUiState.Failed -> FailureContent(state.reason, onRetry = onRetryLoad, onPickAgain = onPickAgain, onClose = onClose)
         is EditorUiState.Cutting -> CuttingContent(state.state, cuttingActions)
-        is EditorUiState.Text -> TextEditorContent(state.state, painter, textActions)
+        is EditorUiState.Text -> TextEditorContent(state.state, painter, snackbarHostState, textActions)
     }
 }
 
@@ -204,7 +184,3 @@ private fun FailureContent(reason: EditorFailure, onRetry: () -> Unit, onPickAga
         )
     }
 }
-
-private const val IMAGE_MIME_TYPES = "image/*"
-private const val CAMERA_DIRECTORY = "editor"
-private const val CAMERA_FILE_NAME = "camera.jpg"

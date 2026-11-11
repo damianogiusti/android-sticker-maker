@@ -39,6 +39,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -72,8 +74,8 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import com.damianogiusti.stickermaker.feature.editor.R
-import com.damianogiusti.stickermaker.feature.editor.SaveFailure
-import com.damianogiusti.stickermaker.feature.editor.SaveStatus
+import com.damianogiusti.stickermaker.feature.editor.CopyFailure
+import com.damianogiusti.stickermaker.feature.editor.CopyStatus
 import com.damianogiusti.stickermaker.feature.editor.TextEditing
 import com.damianogiusti.stickermaker.feature.editor.TextState
 import com.damianogiusti.stickermaker.imaging.asBitmap
@@ -87,8 +89,8 @@ import com.damianogiusti.stickermaker.imaging.text.TextItemPainter
 
 class TextEditorActions(
     val onBack: () -> Unit,
-    val onSave: () -> Unit,
-    val onSaveErrorDismissed: () -> Unit,
+    val onCopy: () -> Unit,
+    val onCopyErrorDismissed: () -> Unit,
     val onAddText: () -> Unit,
     val onEditingTextChanged: (String) -> Unit,
     val onEditingConfirmed: () -> Unit,
@@ -108,19 +110,25 @@ class TextEditorActions(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TextEditorContent(state: TextState, painter: TextItemPainter, actions: TextEditorActions) {
+fun TextEditorContent(
+    state: TextState,
+    painter: TextItemPainter,
+    snackbarHostState: SnackbarHostState,
+    actions: TextEditorActions,
+) {
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.text_title)) },
                 navigationIcon = {
-                    IconButton(onClick = actions.onBack, enabled = state.save != SaveStatus.Saving) {
+                    IconButton(onClick = actions.onBack, enabled = state.copy != CopyStatus.Copying) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.editor_back))
                     }
                 },
                 actions = {
-                    TextButton(onClick = actions.onSave, enabled = state.canSave && !state.isBusy) {
-                        Text(stringResource(R.string.text_save))
+                    TextButton(onClick = actions.onCopy, enabled = state.canCopy && !state.isBusy) {
+                        Text(stringResource(R.string.text_copy))
                     }
                 },
             )
@@ -134,12 +142,12 @@ fun TextEditorContent(state: TextState, painter: TextItemPainter, actions: TextE
                 }
                 TextControls(state, actions)
             }
-            if (state.isBusy) BusyOverlay(isSaving = state.save == SaveStatus.Saving)
+            if (state.isBusy) BusyOverlay(isCopying = state.copy == CopyStatus.Copying)
         }
     }
     state.editing?.let { TextEditingDialog(it, actions) }
     if (state.isOutlineDialogVisible) OutlineDialog(state, actions)
-    (state.save as? SaveStatus.Failed)?.let { SaveFailedDialog(it.reason, actions) }
+    (state.copy as? CopyStatus.Failed)?.let { CopyFailedDialog(it.reason, actions) }
     if (state.outlineFailed) {
         AlertDialog(
             onDismissRequest = actions.onOutlineErrorDismissed,
@@ -352,7 +360,7 @@ private fun ColorSwatches(selectedIndex: Int, onSelected: (Int) -> Unit) {
 }
 
 @Composable
-private fun BusyOverlay(isSaving: Boolean) {
+private fun BusyOverlay(isCopying: Boolean) {
     Box(
         Modifier
             .fillMaxSize()
@@ -363,7 +371,7 @@ private fun BusyOverlay(isSaving: Boolean) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             CircularProgressIndicator()
             Text(
-                stringResource(if (isSaving) R.string.save_progress else R.string.outline_rendering),
+                stringResource(if (isCopying) R.string.copy_progress else R.string.outline_rendering),
                 color = Color.White,
                 style = MaterialTheme.typography.bodyLarge,
             )
@@ -428,27 +436,26 @@ private fun OutlineDialog(state: TextState, actions: TextEditorActions) {
 }
 
 @Composable
-private fun SaveFailedDialog(reason: SaveFailure, actions: TextEditorActions) {
+private fun CopyFailedDialog(reason: CopyFailure, actions: TextEditorActions) {
     val message = when (reason) {
-        SaveFailure.TOO_LARGE -> R.string.save_failed_too_large
-        SaveFailure.TOO_MANY_STICKERS -> R.string.save_failed_too_many
-        SaveFailure.NOTHING_TO_SAVE -> R.string.save_failed_nothing
-        SaveFailure.STORAGE -> R.string.save_failed_storage
+        CopyFailure.TOO_LARGE -> R.string.copy_failed_too_large
+        CopyFailure.NOTHING_TO_COPY -> R.string.copy_failed_nothing
+        CopyFailure.STORAGE -> R.string.copy_failed_storage
     }
-    val canRetry = reason == SaveFailure.TOO_LARGE || reason == SaveFailure.STORAGE
+    val canRetry = reason == CopyFailure.TOO_LARGE || reason == CopyFailure.STORAGE
     AlertDialog(
-        onDismissRequest = actions.onSaveErrorDismissed,
-        title = { Text(stringResource(R.string.save_failed_title)) },
+        onDismissRequest = actions.onCopyErrorDismissed,
+        title = { Text(stringResource(R.string.copy_failed_title)) },
         text = { Text(stringResource(message)) },
         confirmButton = {
             if (canRetry) {
-                TextButton(onClick = actions.onSave) { Text(stringResource(R.string.editor_try_again)) }
+                TextButton(onClick = actions.onCopy) { Text(stringResource(R.string.editor_try_again)) }
             } else {
-                TextButton(onClick = actions.onSaveErrorDismissed) { Text(stringResource(R.string.editor_ok)) }
+                TextButton(onClick = actions.onCopyErrorDismissed) { Text(stringResource(R.string.editor_ok)) }
             }
         },
         dismissButton = if (canRetry) {
-            { TextButton(onClick = actions.onSaveErrorDismissed) { Text(stringResource(R.string.editor_cancel)) } }
+            { TextButton(onClick = actions.onCopyErrorDismissed) { Text(stringResource(R.string.editor_cancel)) } }
         } else {
             null
         },

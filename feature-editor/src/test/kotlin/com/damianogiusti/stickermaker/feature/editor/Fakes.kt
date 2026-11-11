@@ -3,12 +3,10 @@ package com.damianogiusti.stickermaker.feature.editor
 import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
-import kotlinx.coroutines.flow.Flow
-import com.damianogiusti.stickermaker.domain.error.StickerPackError
-import com.damianogiusti.stickermaker.domain.model.PackFile
-import com.damianogiusti.stickermaker.domain.model.StickerPack
-import com.damianogiusti.stickermaker.domain.model.StickerPackId
-import com.damianogiusti.stickermaker.domain.repository.StickerPackRepository
+import com.damianogiusti.stickermaker.domain.clipboard.ClipboardError
+import com.damianogiusti.stickermaker.domain.clipboard.EncodedSticker
+import com.damianogiusti.stickermaker.domain.clipboard.StickerClipboard
+import com.damianogiusti.stickermaker.domain.clipboard.StickerImageFormat
 import com.damianogiusti.stickermaker.imaging.CutError
 import com.damianogiusti.stickermaker.imaging.EditorImage
 import com.damianogiusti.stickermaker.imaging.ImageStoreError
@@ -117,53 +115,24 @@ class FakeOutlinePreferences(var defaults: OutlineDefaults = OutlineDefaults.Ini
 }
 
 class FakeStickerExporter : StickerExporter {
-    var stickerResult: Either<ExportError, ByteArray> = byteArrayOf(1, 2, 3).right()
-    var trayResult: Either<ExportError, ByteArray> = byteArrayOf(9).right()
+    var result: Either<ExportError, ByteArray> = byteArrayOf(1, 2, 3).right()
     val compositions = mutableListOf<StickerComposition>()
+    val formats = mutableListOf<StickerImageFormat>()
 
-    override suspend fun exportSticker(composition: StickerComposition): Either<ExportError, ByteArray> {
+    override suspend fun exportSticker(
+        composition: StickerComposition,
+        format: StickerImageFormat,
+    ): Either<ExportError, ByteArray> {
         compositions += composition
-        return stickerResult
-    }
-
-    override suspend fun exportTray(composition: StickerComposition): Either<ExportError, ByteArray> {
-        compositions += composition
-        return trayResult
+        formats += format
+        return result
     }
 }
 
-class FakeStickerPackRepository(var stickerCount: Int = 0) : StickerPackRepository {
-    var failure: StickerPackError? = null
-    val added = mutableListOf<PackFile>()
-    val replaced = mutableListOf<Pair<String, PackFile>>()
-    val trays = mutableListOf<PackFile>()
+class FakeStickerClipboard : StickerClipboard {
+    var failure: ClipboardError? = null
+    val copied = mutableListOf<EncodedSticker>()
 
-    override fun observePacks(): Flow<Either<StickerPackError, List<StickerPack>>> = error("unused")
-    override fun observePack(id: StickerPackId): Flow<Either<StickerPackError, StickerPack>> = error("unused")
-
-    override suspend fun getPack(id: StickerPackId): Either<StickerPackError, StickerPack> = StickerPack(
-        id = id, name = "Pack", publisher = "Me", trayFileName = null,
-        stickers = List(stickerCount) {
-            com.damianogiusti.stickermaker.domain.model.Sticker("$it.webp", emptyList(), 1L, it)
-        },
-        imageDataVersion = 1, isAvailableInKeyboard = false, keyboardAddedAt = null, isImported = false, position = 0,
-    ).right()
-
-    override suspend fun createPack(name: String, publisher: String): Either<StickerPackError, StickerPack> = error("unused")
-    override suspend fun renamePack(id: StickerPackId, name: String, publisher: String): Either<StickerPackError, Unit> = error("unused")
-    override suspend fun deletePack(id: StickerPackId): Either<StickerPackError, Unit> = error("unused")
-
-    override suspend fun addSticker(file: PackFile): Either<StickerPackError, Unit> =
-        failure?.left() ?: Unit.right().also { added += file }
-
-    override suspend fun replaceSticker(replacedFileName: String, file: PackFile): Either<StickerPackError, Unit> =
-        failure?.left() ?: Unit.right().also { replaced += replacedFileName to file }
-
-    override suspend fun deleteSticker(packId: StickerPackId, fileName: String): Either<StickerPackError, Unit> = error("unused")
-
-    override suspend fun setTray(file: PackFile): Either<StickerPackError, Unit> =
-        failure?.left() ?: Unit.right().also { trays += file }
-
-    override suspend fun setEmojis(packId: StickerPackId, fileName: String, emojis: List<String>): Either<StickerPackError, Unit> = error("unused")
-    override suspend fun setKeyboardAvailability(id: StickerPackId, isAvailable: Boolean): Either<StickerPackError, Unit> = error("unused")
+    override suspend fun copy(sticker: EncodedSticker): Either<ClipboardError, Unit> =
+        failure?.left() ?: Unit.right().also { copied += sticker }
 }

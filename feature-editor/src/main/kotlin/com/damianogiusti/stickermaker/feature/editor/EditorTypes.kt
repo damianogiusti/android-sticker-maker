@@ -2,20 +2,11 @@ package com.damianogiusti.stickermaker.feature.editor
 
 import android.net.Uri
 
-/** Where the picture comes from. The editor launches the matching picker itself. */
+/** Where the picture comes from. */
 sealed interface EditorSource {
-    data object Camera : EditorSource
-    data object Gallery : EditorSource
-    data object Files : EditorSource
+    /** The editor opens the Photo Picker itself. */
+    data object PhotoPicker : EditorSource
 
-    /** Text-only sticker: skips cutting. */
-    data object Text : EditorSource
+    /** The image was already chosen (shared from another app, or picked on Home). */
     data class ImageUri(val uri: Uri) : EditorSource
-}
-
-/** What happens to the result when the user saves. */
-sealed interface EditorTarget {
-    data object NewSticker : EditorTarget
-    data class ReplaceSticker(val fileName: String) : EditorTarget
-    data object Tray : EditorTarget
 }

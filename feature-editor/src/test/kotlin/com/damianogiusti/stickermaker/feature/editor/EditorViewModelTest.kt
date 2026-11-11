@@ -9,12 +9,8 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import com.damianogiusti.stickermaker.domain.error.StickerPackError
-import com.damianogiusti.stickermaker.domain.model.StickerPackId
-import com.damianogiusti.stickermaker.domain.repository.Clock
-import com.damianogiusti.stickermaker.domain.usecase.AddStickerUseCase
-import com.damianogiusti.stickermaker.domain.usecase.ReplaceStickerUseCase
-import com.damianogiusti.stickermaker.domain.usecase.SetStickerPackTrayUseCase
+import com.damianogiusti.stickermaker.domain.clipboard.ClipboardError
+import com.damianogiusti.stickermaker.domain.clipboard.StickerImageFormat
 import com.damianogiusti.stickermaker.imaging.CutError
 import com.damianogiusti.stickermaker.imaging.ExportError
 import com.damianogiusti.stickermaker.imaging.OutlineError
@@ -29,6 +25,7 @@ import com.damianogiusti.stickermaker.imaging.text.TextDrawStyle
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -44,7 +41,7 @@ class EditorViewModelTest {
     private val outline = FakeOutlineRenderer()
     private val preferences = FakeOutlinePreferences()
     private val exporter = FakeStickerExporter()
-    private val repository = FakeStickerPackRepository()
+    private val clipboard = FakeStickerClipboard()
     private val store = FakeImageStore()
     private val logger = FakeEditorLogger()
     private val savedState = SavedStateHandle()
@@ -55,18 +52,13 @@ class EditorViewModelTest {
     @AfterTest
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel(target: EditorTarget = EditorTarget.NewSticker, handle: SavedStateHandle = savedState) = EditorViewModel(
-        packId = StickerPackId("42"),
-        target = target,
+    private fun viewModel(handle: SavedStateHandle = savedState) = EditorViewModel(
         sourceLoader = loader,
         cutter = cutter,
         segmenter = segmenter,
         outlineRenderer = outline,
         preferences = preferences,
-        saveSticker = SaveStickerUseCase(
-            exporter, AddStickerUseCase(repository), ReplaceStickerUseCase(repository),
-            SetStickerPackTrayUseCase(repository), Clock { 7L },
-        ),
+        copySticker = CopyStickerUseCase(exporter, clipboard, StickerImageFormat.WEBP),
         imageStore = store,
         savedState = handle,
         logger = logger,
@@ -78,7 +70,9 @@ class EditorViewModelTest {
     private fun EditorViewModel.openCutting(): EditorViewModel = apply { onImagePicked(SourceUri("content://image")) }
 
     private fun EditorViewModel.openTextWithOneItem(): EditorViewModel = apply {
-        onTextSourceSelected()
+        onImagePicked(SourceUri("content://image"))
+        onSelectAllClicked()
+        onAddTextClicked()
         onEditingTextChanged("Hello")
         onEditingConfirmed()
     }
@@ -291,15 +285,6 @@ class EditorViewModelTest {
     // region text
 
     @Test
-    fun `text source opens the text screen with the add dialog and no image`() {
-        val vm = viewModel().apply { onTextSourceSelected() }
-
-        val text = vm.text()
-        assertFalse(text.hasImage)
-        assertEquals(TextEditing(null, ""), text.editing)
-    }
-
-    @Test
     fun `confirming a text adds a selected item at the canvas center`() {
         val vm = viewModel().openTextWithOneItem()
 
@@ -313,13 +298,13 @@ class EditorViewModelTest {
 
     @Test
     fun `a blank text adds nothing`() {
-        val vm = viewModel().apply {
-            onTextSourceSelected()
+        val vm = viewModel().openTextWithOneItem().apply {
+            onAddTextClicked()
             onEditingTextChanged("   ")
             onEditingConfirmed()
         }
 
-        assertTrue(vm.text().items.isEmpty())
+        assertEquals(1, vm.text().items.size)
         assertNull(vm.text().editing)
     }
 
@@ -398,15 +383,6 @@ class EditorViewModelTest {
         assertEquals(2, second.colorIndex)
     }
 
-    @Test
-    fun `back on a text only sticker cancels`() = runTest {
-        val vm = viewModel().openTextWithOneItem()
-        vm.events.test {
-            vm.onBackPressed()
-            assertEquals(EditorEvent.Cancelled, awaitItem())
-        }
-    }
-
     // endregion
 
     // region outline
@@ -456,81 +432,77 @@ class EditorViewModelTest {
 
     // endregion
 
-    // region save
+    // region copy
 
     @Test
-    fun `save stores the sticker and emits Done`() = runTest {
+    fun `copy puts the sticker on the clipboard and emits Copied`() = runTest {
         val vm = viewModel().openCutting().apply { onSelectAllClicked() }
         vm.events.test {
-            vm.onSaveClicked()
-            assertEquals(EditorEvent.Done, awaitItem())
+            vm.onCopyClicked()
+            assertEquals(EditorEvent.Copied, awaitItem())
         }
-        assertEquals("7.webp", repository.added.single().fileName)
-        assertEquals(1, exporter.compositions.size)
+        assertEquals(StickerImageFormat.WEBP, clipboard.copied.single().format)
+        assertContentEquals(byteArrayOf(1, 2, 3), clipboard.copied.single().bytes)
         assertNotNull(exporter.compositions.single().outlinedCutout)
+        assertEquals(CopyStatus.Idle, vm.text().copy)
     }
 
     @Test
-    fun `save of a replace target replaces the file`() {
-        val vm = viewModel(EditorTarget.ReplaceSticker("old.webp")).openTextWithOneItem()
-
-        vm.onSaveClicked()
-
-        assertEquals("old.webp", repository.replaced.single().first)
+    fun `copy can be repeated after more edits and stays in the editor`() = runTest {
+        val vm = viewModel().openTextWithOneItem()
+        vm.events.test {
+            vm.onCopyClicked()
+            assertEquals(EditorEvent.Copied, awaitItem())
+            vm.onAddTextClicked()
+            vm.onEditingTextChanged("More")
+            vm.onEditingConfirmed()
+            vm.onCopyClicked()
+            assertEquals(EditorEvent.Copied, awaitItem())
+        }
+        assertEquals(2, clipboard.copied.size)
+        assertEquals(2, exporter.compositions.last().texts.size)
+        assertIs<EditorUiState.Text>(vm.state.value)
     }
 
     @Test
-    fun `save of the tray target stores tray png`() {
-        val vm = viewModel(EditorTarget.Tray).openTextWithOneItem()
+    fun `a file that is too large shows an error and can be dismissed`() = runTest {
+        exporter.result = ExportError.StickerTooLarge(300_000, 102_400).left()
+        val vm = viewModel().openTextWithOneItem()
+        vm.events.test {
+            vm.onCopyClicked()
+            expectNoEvents()
+        }
 
-        vm.onSaveClicked()
-
-        assertEquals("tray.png", repository.trays.single().fileName)
+        assertEquals(CopyStatus.Failed(CopyFailure.TOO_LARGE), vm.text().copy)
+        assertTrue(clipboard.copied.isEmpty())
+        vm.onCopyErrorDismissed()
+        assertEquals(CopyStatus.Idle, vm.text().copy)
     }
 
     @Test
-    fun `a file that is too large shows an error and can be dismissed`() {
-        exporter.stickerResult = ExportError.StickerTooLarge(300_000, 102_400).left()
+    fun `a clipboard failure shows the storage error and retry copies again`() = runTest {
+        clipboard.failure = ClipboardError.Failed("denied")
+        val vm = viewModel().openTextWithOneItem()
+        vm.onCopyClicked()
+        assertEquals(CopyStatus.Failed(CopyFailure.STORAGE), vm.text().copy)
+
+        clipboard.failure = null
+        vm.events.test {
+            vm.onCopyClicked()
+            assertEquals(EditorEvent.Copied, awaitItem())
+        }
+        assertEquals(1, clipboard.copied.size)
+    }
+
+    @Test
+    fun `an empty composite reports nothing to copy`() = runTest {
+        exporter.result = ExportError.EmptyComposite.left()
         val vm = viewModel().openTextWithOneItem()
 
-        vm.onSaveClicked()
+        vm.onCopyClicked()
 
-        assertEquals(SaveStatus.Failed(SaveFailure.TOO_LARGE), vm.text().save)
-        vm.onSaveErrorDismissed()
-        assertEquals(SaveStatus.Idle, vm.text().save)
-    }
-
-    @Test
-    fun `a full pack shows the too many stickers error`() {
-        repository.stickerCount = 30
-        val vm = viewModel().openTextWithOneItem()
-
-        vm.onSaveClicked()
-
-        assertEquals(SaveStatus.Failed(SaveFailure.TOO_MANY_STICKERS), vm.text().save)
-    }
-
-    @Test
-    fun `a storage error shows the storage failure and retry saves again`() {
-        repository.failure = StickerPackError.Storage("disk")
-        val vm = viewModel().openTextWithOneItem()
-        vm.onSaveClicked()
-        assertEquals(SaveStatus.Failed(SaveFailure.STORAGE), vm.text().save)
-
-        repository.failure = null
-        vm.onSaveClicked()
-
-        assertEquals(1, repository.added.size)
-    }
-
-    @Test
-    fun `saving with nothing on the canvas reports nothing to save`() {
-        val vm = viewModel().apply { onTextSourceSelected(); onEditingDismissed() }
-
-        vm.onSaveClicked()
-
-        assertEquals(SaveStatus.Failed(SaveFailure.NOTHING_TO_SAVE), vm.text().save)
-        assertTrue(repository.added.isEmpty())
+        assertEquals(CopyStatus.Failed(CopyFailure.NOTHING_TO_COPY), vm.text().copy)
+        assertTrue(clipboard.copied.isEmpty())
     }
 
     // endregion
@@ -594,16 +566,6 @@ class EditorViewModelTest {
 
         assertEquals(listOf(1L, 2L), restored.text().items.map { it.id })
         assertEquals(1, first.text().items.size)
-    }
-
-    @Test
-    fun `a text only sticker is restored without images`() {
-        viewModel().openTextWithOneItem()
-
-        val restored = viewModel().text()
-
-        assertFalse(restored.hasImage)
-        assertEquals("Hello", restored.items.single().text)
     }
 
     @Test

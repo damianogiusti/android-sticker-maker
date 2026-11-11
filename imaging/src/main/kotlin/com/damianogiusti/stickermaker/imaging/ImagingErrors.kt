@@ -23,7 +23,6 @@ sealed interface OutlineError {
 sealed interface ExportError {
     data object EmptyComposite : ExportError
     data class StickerTooLarge(val lastSizeBytes: Long, val limitBytes: Long) : ExportError
-    data class TrayTooLarge(val sizeBytes: Long, val limitBytes: Long) : ExportError
     data class EncodeFailed(val message: String?) : ExportError
 }
 

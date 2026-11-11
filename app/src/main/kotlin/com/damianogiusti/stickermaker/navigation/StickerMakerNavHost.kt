@@ -11,7 +11,6 @@ import com.damianogiusti.stickermaker.domain.model.StickerSource
 import com.damianogiusti.stickermaker.domain.model.StickerTarget
 import com.damianogiusti.stickermaker.feature.editor.EditorScreen
 import com.damianogiusti.stickermaker.feature.editor.EditorSource
-import com.damianogiusti.stickermaker.feature.editor.EditorTarget
 import com.damianogiusti.stickermaker.feature.gallery.StickerGalleryScreen
 import com.damianogiusti.stickermaker.feature.keyboard.KeyboardSetupScreen
 import com.damianogiusti.stickermaker.feature.packs.detail.PackDetailScreen
@@ -70,11 +69,8 @@ fun StickerMakerNavHost() {
         composable<Editor> { entry ->
             val route = entry.toRoute<Editor>()
             EditorScreen(
-                packId = route.packId,
                 source = route.toEditorSource(),
-                target = route.toEditorTarget(),
-                onDone = { navController.popBackStack() },
-                onCancel = { navController.popBackStack() },
+                onClose = { navController.popBackStack() },
             )
         }
     }
@@ -93,22 +89,9 @@ private fun stickerCreationRoute(packId: String, source: StickerSource, target: 
 private fun StickerGallery.toEditor(imageUri: String): Editor =
     Editor(packId, StickerSource.WHATSAPP_STICKERS, targetKind, replaceFileName, imageUri)
 
-private fun Editor.toEditorSource(): EditorSource {
-    imageUri?.let { return EditorSource.ImageUri(Uri.parse(it)) }
-    return when (source) {
-        StickerSource.CAMERA -> EditorSource.Camera
-        StickerSource.GALLERY -> EditorSource.Gallery
-        StickerSource.FILES -> EditorSource.Files
-        StickerSource.TEXT -> EditorSource.Text
-        StickerSource.WHATSAPP_STICKERS -> error("Sticker Gallery editor route without imageUri")
-    }
-}
-
-private fun Editor.toEditorTarget(): EditorTarget = when (targetKind) {
-    EditorTargetKind.NEW -> EditorTarget.NewSticker
-    EditorTargetKind.REPLACE -> EditorTarget.ReplaceSticker(requireNotNull(replaceFileName) { "REPLACE needs a file name" })
-    EditorTargetKind.TRAY -> EditorTarget.Tray
-}
+// Interim mapping until the pack screens are removed: every source opens the Photo Picker.
+private fun Editor.toEditorSource(): EditorSource =
+    imageUri?.let { EditorSource.ImageUri(Uri.parse(it)) } ?: EditorSource.PhotoPicker
 
 private fun editorRoute(packId: String, source: StickerSource, target: StickerTarget): Editor = when (target) {
     StickerTarget.NewSticker -> Editor(packId, source, EditorTargetKind.NEW)

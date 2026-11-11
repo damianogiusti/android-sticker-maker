@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
-        <!-- Own subclass: the app declares its own FileProvider and two providers cannot share a class name. -->
+        <!-- Serves the sticker copied to the clipboard from cacheDir/clipboard. -->
         <provider
-            android:name="com.damianogiusti.stickermaker.feature.editor.EditorFileProvider"
-            android:authorities="${applicationId}.editor.fileprovider"
+            android:name="com.damianogiusti.stickermaker.feature.editor.ClipboardFileProvider"
+            android:authorities="${applicationId}.clipboard.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/editor_file_paths" />
+                android:resource="@xml/clipboard_file_paths" />
         </provider>
     </application>
 </manifest>

@@ -36,7 +36,6 @@
     <string name="cut_message_outline_failed">The outline could not be drawn. Try again.</string>
 
     <string name="text_title">Text and outline</string>
-    <string name="text_save">Save</string>
     <string name="text_add">Add text</string>
     <string name="text_empty_hint">Tap Add text to start.</string>
     <string name="text_style_with_background">Background</string>
@@ -58,10 +57,11 @@
     <string name="outline_dialog_apply">Apply</string>
     <string name="outline_rendering">Applying the outline…</string>
 
-    <string name="save_progress">Saving…</string>
-    <string name="save_failed_title">Cannot save the sticker</string>
-    <string name="save_failed_too_large">The file is too big for WhatsApp, even at lower quality. Try a simpler picture.</string>
-    <string name="save_failed_too_many">This pack already has 30 stickers.</string>
-    <string name="save_failed_nothing">Add a picture or a text first.</string>
-    <string name="save_failed_storage">The file could not be saved. Check the free space and try again.</string>
+    <string name="text_copy">Copy</string>
+    <string name="copy_progress">Copying…</string>
+    <string name="editor_copied">Copied. Paste it in WhatsApp.</string>
+    <string name="copy_failed_title">Cannot copy the sticker</string>
+    <string name="copy_failed_too_large">The file is too big, even at lower quality. Try a simpler picture.</string>
+    <string name="copy_failed_nothing">Add a picture or a text first.</string>
+    <string name="copy_failed_storage">The sticker could not be copied. Check the free space and try again.</string>
 </resources>

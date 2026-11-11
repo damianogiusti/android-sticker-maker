@@ -36,7 +36,6 @@
     <string name="cut_message_outline_failed">Non è stato possibile disegnare il contorno. Riprova.</string>
 
     <string name="text_title">Testo e contorno</string>
-    <string name="text_save">Salva</string>
     <string name="text_add">Aggiungi testo</string>
     <string name="text_empty_hint">Tocca Aggiungi testo per iniziare.</string>
     <string name="text_style_with_background">Sfondo</string>
@@ -58,10 +57,11 @@
     <string name="outline_dialog_apply">Applica</string>
     <string name="outline_rendering">Applicazione del contorno…</string>
 
-    <string name="save_progress">Salvataggio in corso…</string>
-    <string name="save_failed_title">Impossibile salvare lo sticker</string>
-    <string name="save_failed_too_large">Il file è troppo grande per WhatsApp, anche con qualità più bassa. Prova con un\'immagine più semplice.</string>
-    <string name="save_failed_too_many">Questo pacchetto ha già 30 sticker.</string>
-    <string name="save_failed_nothing">Aggiungi prima un\'immagine o un testo.</string>
-    <string name="save_failed_storage">Non è stato possibile salvare il file. Controlla lo spazio libero e riprova.</string>
+    <string name="text_copy">Copia</string>
+    <string name="copy_progress">Copia in corso…</string>
+    <string name="editor_copied">Copiato. Incollalo in WhatsApp.</string>
+    <string name="copy_failed_title">Impossibile copiare lo sticker</string>
+    <string name="copy_failed_too_large">Il file è troppo grande, anche con una qualità più bassa. Prova con un\'immagine più semplice.</string>
+    <string name="copy_failed_nothing">Aggiungi prima un\'immagine o un testo.</string>
+    <string name="copy_failed_storage">Non è stato possibile copiare lo sticker. Controlla lo spazio libero e riprova.</string>
 </resources>

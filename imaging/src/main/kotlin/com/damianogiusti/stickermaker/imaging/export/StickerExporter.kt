@@ -14,7 +14,8 @@ import arrow.core.right
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
-import com.damianogiusti.stickermaker.domain.model.StickerPackLimits
+import com.damianogiusti.stickermaker.domain.clipboard.StickerImageFormat
+import com.damianogiusti.stickermaker.domain.model.StickerLimits
 import com.damianogiusti.stickermaker.imaging.EditorImage
 import com.damianogiusti.stickermaker.imaging.ExportError
 import com.damianogiusti.stickermaker.imaging.asBitmap
@@ -27,11 +28,8 @@ import com.damianogiusti.stickermaker.imaging.text.TextItemPainter
 class StickerComposition(val outlinedCutout: EditorImage?, val texts: List<StickerTextItem>)
 
 interface StickerExporter {
-    /** 512x512 lossy WebP, at most 100 KB. */
-    suspend fun exportSticker(composition: StickerComposition): Either<ExportError, ByteArray>
-
-    /** 96x96 PNG, at most 50 KB. */
-    suspend fun exportTray(composition: StickerComposition): Either<ExportError, ByteArray>
+    /** 512x512 transparent image. WebP is lossy and at most 100 KB; PNG has no size limit. */
+    suspend fun exportSticker(composition: StickerComposition, format: StickerImageFormat): Either<ExportError, ByteArray>
 }
 
 class BitmapStickerExporter(
@@ -39,22 +37,18 @@ class BitmapStickerExporter(
     private val dispatcher: CoroutineDispatcher,
 ) : StickerExporter {
 
-    override suspend fun exportSticker(composition: StickerComposition): Either<ExportError, ByteArray> =
+    override suspend fun exportSticker(
+        composition: StickerComposition,
+        format: StickerImageFormat,
+    ): Either<ExportError, ByteArray> =
         guarded {
-            val fitted = composeAndFit(composition, StickerPackLimits.STICKER_SIDE_PX).bind()
-            QualityStepper.encodeWithinLimit(StickerPackLimits.STICKER_MAX_BYTES) { quality ->
-                encode(fitted, webpFormat(), quality)
-            }.bind()
-        }
-
-    override suspend fun exportTray(composition: StickerComposition): Either<ExportError, ByteArray> =
-        guarded {
-            val fitted = composeAndFit(composition, StickerPackLimits.TRAY_SIDE_PX).bind()
-            val bytes = encode(fitted, Bitmap.CompressFormat.PNG, PNG_QUALITY)
-            if (bytes.size > StickerPackLimits.TRAY_MAX_BYTES) {
-                raise(ExportError.TrayTooLarge(bytes.size.toLong(), StickerPackLimits.TRAY_MAX_BYTES))
+            val fitted = composeAndFit(composition, StickerLimits.SIDE_PX).bind()
+            when (format) {
+                StickerImageFormat.WEBP -> QualityStepper.encodeWithinLimit(StickerLimits.WEBP_MAX_BYTES) { quality ->
+                    encode(fitted, webpFormat(), quality)
+                }.bind()
+                StickerImageFormat.PNG -> encode(fitted, Bitmap.CompressFormat.PNG, PNG_QUALITY)
             }
-            bytes
         }
 
     /** Composite on a 1024 canvas, trim to the visible bounds, fit centered in a transparent square. */

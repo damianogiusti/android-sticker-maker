@@ -31,12 +31,12 @@ data class CuttingState(
 /** The text being typed. [itemId] is null for a new text. */
 data class TextEditing(val itemId: Long?, val text: String)
 
-enum class SaveFailure { TOO_LARGE, TOO_MANY_STICKERS, NOTHING_TO_SAVE, STORAGE }
+enum class CopyFailure { TOO_LARGE, NOTHING_TO_COPY, STORAGE }
 
-sealed interface SaveStatus {
-    data object Idle : SaveStatus
-    data object Saving : SaveStatus
-    data class Failed(val reason: SaveFailure) : SaveStatus
+sealed interface CopyStatus {
+    data object Idle : CopyStatus
+    data object Copying : CopyStatus
+    data class Failed(val reason: CopyFailure) : CopyStatus
 }
 
 data class TextState(
@@ -56,12 +56,12 @@ data class TextState(
     val isOutlineDialogVisible: Boolean = false,
     val isOutlineRendering: Boolean = false,
     val outlineFailed: Boolean = false,
-    val save: SaveStatus = SaveStatus.Idle,
+    val copy: CopyStatus = CopyStatus.Idle,
 ) {
     val hasImage: Boolean get() = cutout != null
-    val canSave: Boolean get() = hasImage || items.isNotEmpty()
+    val canCopy: Boolean get() = hasImage || items.isNotEmpty()
     val selected: StickerTextItem? get() = items.firstOrNull { it.id == selectedId }
-    val isBusy: Boolean get() = isOutlineRendering || save == SaveStatus.Saving
+    val isBusy: Boolean get() = isOutlineRendering || copy == CopyStatus.Copying
 }
 
 /** [WORK_LOST]: the app was killed and the saved images could not be read back. */
@@ -77,7 +77,8 @@ sealed interface EditorUiState {
 }
 
 sealed interface EditorEvent {
-    data object Done : EditorEvent
+    /** The sticker is on the clipboard: the screen confirms it and stays in the editor. */
+    data object Copied : EditorEvent
     data object Cancelled : EditorEvent
 
     /** Ask the screen to open the source picker (again). */

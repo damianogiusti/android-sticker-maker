@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.damianogiusti.stickermaker.domain.error.StickerPackError
-import com.damianogiusti.stickermaker.domain.model.StickerPackId
 import com.damianogiusti.stickermaker.imaging.CutError
 import com.damianogiusti.stickermaker.imaging.EditorImage
 import com.damianogiusti.stickermaker.imaging.ExportError
@@ -37,14 +35,12 @@ private const val KEY_TOOL = "editor.tool"
 private const val KEY_TEXT = "editor.text"
 
 class EditorViewModel(
-    private val packId: StickerPackId,
-    private val target: EditorTarget,
     private val sourceLoader: SourceImageLoader,
     private val cutter: ImageCutter,
     private val segmenter: SubjectSegmenter,
     private val outlineRenderer: OutlineRenderer,
     private val preferences: OutlinePreferences,
-    private val saveSticker: SaveStickerUseCase,
+    private val copySticker: CopyStickerUseCase,
     private val imageStore: EditorImageStore,
     private val savedState: SavedStateHandle,
     private val logger: EditorLogger,
@@ -88,10 +84,6 @@ class EditorViewModel(
         lastSource?.let(::onImagePicked)
     }
 
-    fun onTextSourceSelected() {
-        enterText(newTextState(cutout = null, outlined = null, isSelectAll = false).copy(editing = TextEditing(null, "")))
-    }
-
     fun onPickerCancelled() = finish(EditorEvent.Cancelled)
 
     /** After a failed restore: forget the lost work and open the source picker again. */
@@ -108,7 +100,7 @@ class EditorViewModel(
     fun onBackPressed() {
         val current = _state.value
         if (current is EditorUiState.Text) {
-            if (current.state.save == SaveStatus.Saving) return
+            if (current.state.copy == CopyStatus.Copying) return
             val cutting = cuttingState
             if (cutting != null && current.state.hasImage) {
                 showCutting(cutting)
@@ -399,37 +391,39 @@ class EditorViewModel(
 
     // endregion
 
-    // region save
+    // region copy
 
-    fun onSaveClicked() {
+    fun onCopyClicked() {
         val current = currentText() ?: return
         if (current.isBusy) return
-        if (!current.canSave) {
-            updateText { it.copy(save = SaveStatus.Failed(SaveFailure.NOTHING_TO_SAVE)) }
+        if (!current.canCopy) {
+            updateText { it.copy(copy = CopyStatus.Failed(CopyFailure.NOTHING_TO_COPY)) }
             return
         }
-        updateText { it.copy(save = SaveStatus.Saving) }
+        updateText { it.copy(copy = CopyStatus.Copying) }
         viewModelScope.launch {
-            saveSticker(packId, target, current.outlinedCutout, current.items).fold(
+            copySticker(current.outlinedCutout, current.items).fold(
                 ifLeft = { error ->
-                    logger.warn(TAG, "save failed: $error")
-                    updateText { it.copy(save = SaveStatus.Failed(failureOf(error))) }
+                    logger.warn(TAG, "copy failed: $error")
+                    updateText { it.copy(copy = CopyStatus.Failed(failureOf(error))) }
                 },
-                ifRight = { finish(EditorEvent.Done) },
+                ifRight = {
+                    updateText { it.copy(copy = CopyStatus.Idle) }
+                    _events.tryEmit(EditorEvent.Copied)
+                },
             )
         }
     }
 
-    fun onSaveErrorDismissed() = updateText { it.copy(save = SaveStatus.Idle) }
+    fun onCopyErrorDismissed() = updateText { it.copy(copy = CopyStatus.Idle) }
 
-    private fun failureOf(error: SaveStickerError): SaveFailure = when (error) {
-        is SaveStickerError.Export -> when (error.error) {
-            is ExportError.StickerTooLarge, is ExportError.TrayTooLarge -> SaveFailure.TOO_LARGE
-            ExportError.EmptyComposite -> SaveFailure.NOTHING_TO_SAVE
-            is ExportError.EncodeFailed -> SaveFailure.STORAGE
+    private fun failureOf(error: CopyStickerError): CopyFailure = when (error) {
+        is CopyStickerError.Export -> when (error.error) {
+            is ExportError.StickerTooLarge -> CopyFailure.TOO_LARGE
+            ExportError.EmptyComposite -> CopyFailure.NOTHING_TO_COPY
+            is ExportError.EncodeFailed -> CopyFailure.STORAGE
         }
-        is SaveStickerError.Store ->
-            if (error.error is StickerPackError.TooManyStickers) SaveFailure.TOO_MANY_STICKERS else SaveFailure.STORAGE
+        is CopyStickerError.Clipboard -> CopyFailure.STORAGE
     }
 
     private fun currentText(): TextState? = (_state.value as? EditorUiState.Text)?.state
