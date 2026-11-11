@@ -40,9 +40,9 @@ Copy writes `cacheDir/clipboard/<timestamp>.png`, sets a content-URI clip (FileP
 Clean Architecture, dependencies pointing inward:
 
 ```
-Presentation (Composables, ViewModels)   → compose-ui skill
-Domain       (UseCases, entities)         → kotlin-standards skill
-Data         (Repositories, data access)  → kotlin-standards skill
+Presentation (Composables, ViewModels)    → compose-ui skill
+Domain       (UseCases, ports, entities)  → kotlin-standards skill
+Adapters     (clipboard, TFLite, bitmaps) → kotlin-standards skill
 ```
 
 ## Skills
