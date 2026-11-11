@@ -24,8 +24,8 @@ and open it on your phone. Android 7.0 or later.
 
 ## Good to know
 
-- **Magic** uses an on-device DeepLab v3 model. It recognizes 21 classes: people, pets, vehicles and some
-  common objects. For other subjects, cut by hand.
+- **Magic** uses an on-device DeepLab v3 model. It recognizes 20 kinds of subject (PASCAL VOC): people,
+  cats, dogs, birds, horses, sheep, cows, vehicles, bottles, chairs, sofas, tables, potted plants and TVs. For other subjects, cut by hand.
 - The sticker goes to the clipboard as PNG. WhatsApp does not paste a WebP image from the clipboard.
 - On Android 13 and later the system shows its own clipboard preview, so the app shows no extra message.
 
