@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gallery_title">Sticker Gallery</string>
+    <string name="gallery_back">Back</string>
+    <string name="gallery_tab_whatsapp">WhatsApp</string>
+    <string name="gallery_tab_mine">My stickers</string>
+    <string name="gallery_source_whatsapp">WhatsApp</string>
+    <string name="gallery_source_business">WhatsApp Business</string>
+
+    <string name="gallery_permission_title">Allow access to the sticker folder</string>
+    <string name="gallery_permission_body">Pick the WhatsApp Stickers folder in the next screen and allow access. The app only reads the stickers you received.</string>
+    <string name="gallery_permission_action">Choose folder</string>
+    <string name="gallery_change_folder">Change folder</string>
+    <string name="gallery_whatsapp_empty_title">No stickers found</string>
+    <string name="gallery_whatsapp_empty_body">The folder has no .webp files yet. Receive a sticker in WhatsApp and try again.</string>
+    <string name="gallery_whatsapp_error">Could not read the folder.</string>
+    <string name="gallery_retry">Try again</string>
+    <string name="gallery_animated_hint">Animated stickers can not be used and are shown dimmed.</string>
+    <string name="gallery_animated_badge">Animated</string>
+    <string name="gallery_sticker_description">Sticker</string>
+
+    <string name="gallery_mine_empty_title">No stickers yet</string>
+    <string name="gallery_mine_empty_body">Stickers from your own packs will show up here.</string>
+    <string name="gallery_mine_error">Could not load your stickers.</string>
+
+    <string name="gallery_message_grant_failed">Could not keep access to the folder. Try again.</string>
+    <string name="gallery_message_copy_failed">Could not use this sticker.</string>
+</resources>
