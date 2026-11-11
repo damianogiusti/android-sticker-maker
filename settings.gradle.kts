@@ -27,3 +27,4 @@ dependencyResolutionManagement {
     }
 }
 
+include(":domain")
