@@ -8,12 +8,14 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.IntentCompat
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import com.damianogiusti.stickermaker.imports.IncomingImportViewModel
 import com.damianogiusti.stickermaker.navigation.StickerMakerNavHost
+import com.damianogiusti.stickermaker.share.IncomingIntent
+import com.damianogiusti.stickermaker.share.IncomingShareViewModel
+import com.damianogiusti.stickermaker.share.SharedImageIntent
 import com.damianogiusti.stickermaker.ui.theme.StickerMakerTheme
 
 class MainActivity : ComponentActivity() {
-    private val incomingImport: IncomingImportViewModel by viewModel()
+    private val incomingShare: IncomingShareViewModel by viewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,26 +36,23 @@ class MainActivity : ComponentActivity() {
         handleIncoming(intent)
     }
 
-    /**
-     * Thin adapter: finds the file URI in a VIEW / SEND intent and hands it to the ViewModel. The same
-     * intent is delivered again when the task is brought back from Recents; importing it twice would
-     * duplicate the pack or fail on an expired URI grant, so such intents are ignored.
-     */
+    /** Thin adapter: reads the intent into plain values, the rule lives in [SharedImageIntent]. */
     private fun handleIncoming(intent: Intent) {
-        if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0) return
-        if (intent.getBooleanExtra(EXTRA_CONSUMED, false)) return
-        val uri: Uri? = when (intent.action) {
-            Intent.ACTION_VIEW -> intent.data
-            Intent.ACTION_SEND -> IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
-            else -> null
-        }
-        uri?.let {
-            intent.putExtra(EXTRA_CONSUMED, true)
-            incomingImport.importFrom(it.toString())
-        }
+        val streamUri = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java)
+        val uri = SharedImageIntent.imageUriOf(
+            IncomingIntent(
+                action = intent.action,
+                mimeType = intent.type,
+                streamUri = streamUri?.toString(),
+                isLaunchedFromHistory = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0,
+                isConsumed = intent.getBooleanExtra(EXTRA_CONSUMED, false),
+            ),
+        ) ?: return
+        intent.putExtra(EXTRA_CONSUMED, true)
+        incomingShare.onImageShared(uri)
     }
 
     private companion object {
-        const val EXTRA_CONSUMED = "com.damianogiusti.stickermaker.extra.IMPORT_CONSUMED"
+        const val EXTRA_CONSUMED = "com.damianogiusti.stickermaker.extra.SHARE_CONSUMED"
     }
 }

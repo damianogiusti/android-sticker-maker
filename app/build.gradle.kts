@@ -27,13 +27,7 @@ kotlin { jvmToolchain(17) }
 
 dependencies {
     implementation(project(":core-ui"))
-    implementation(project(":domain"))
-    implementation(project(":data"))
-    implementation(project(":imaging"))
-    implementation(project(":feature-packs"))
     implementation(project(":feature-editor"))
-    implementation(project(":feature-gallery"))
-    implementation(project(":feature-keyboard"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -47,7 +41,6 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
-    implementation(libs.coil.compose)
     debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.kotlin.test.junit)

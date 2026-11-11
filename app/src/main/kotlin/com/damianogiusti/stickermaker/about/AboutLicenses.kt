@@ -27,12 +27,10 @@ internal object AboutLicenses {
 
     val libraries = listOf(
         LibraryLicense("Kotlin and kotlinx (coroutines, serialization)", APACHE),
-        LibraryLicense("AndroidX (Core, Lifecycle, Activity, Navigation, Emoji2)", APACHE),
+        LibraryLicense("AndroidX (Core, Lifecycle, Activity, Navigation)", APACHE),
         LibraryLicense("Jetpack Compose and Material 3", APACHE),
         LibraryLicense("Koin", APACHE),
         LibraryLicense("Arrow", APACHE),
-        LibraryLicense("SQLDelight", APACHE),
-        LibraryLicense("Coil", APACHE),
         LibraryLicense("LiteRT (TensorFlow Lite)", APACHE),
     )
 }
