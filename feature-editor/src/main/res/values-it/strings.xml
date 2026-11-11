@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="editor_back">Indietro</string>
+    <string name="editor_ok">OK</string>
+    <string name="editor_close">Chiudi</string>
+    <string name="editor_try_again">Riprova</string>
+    <string name="editor_cancel">Annulla</string>
+    <string name="editor_loading_image">Caricamento dell\'immagine…</string>
+
+    <string name="editor_failure_image_title">Impossibile aprire questa immagine</string>
+    <string name="editor_failure_image_body">Prova con un\'altra immagine.</string>
+    <string name="editor_failure_lost_title">Impossibile ripristinare il lavoro</string>
+    <string name="editor_failure_lost_body">L\'app è stata chiusa mentre modificavi. Scegli un\'immagine per ricominciare.</string>
+    <string name="editor_pick_again">Scegli di nuovo</string>
+    <string name="editor_failure_picker_title">Nessuna app disponibile</string>
+    <string name="editor_failure_picker_body">Nessuna app su questo dispositivo può fornire un\'immagine.</string>
+
+    <string name="cut_title">Ritaglia</string>
+    <string name="cut_tool_freehand">Mano libera</string>
+    <string name="cut_tool_square">Quadrato</string>
+    <string name="cut_tool_circle">Cerchio</string>
+    <string name="cut_tool_polygon">Poligono</string>
+    <string name="cut_action_select_all">Seleziona tutto</string>
+    <string name="cut_action_rotate">Ruota</string>
+    <string name="cut_action_magic">Magia</string>
+    <string name="cut_action_undo">Annulla</string>
+    <string name="cut_busy_magic">Ricerca del soggetto…</string>
+    <string name="cut_busy_cutting">Ritaglio in corso…</string>
+    <string name="cut_busy_rotating">Rotazione in corso…</string>
+    <string name="cut_message_no_subject_title">Nessun soggetto trovato</string>
+    <string name="cut_message_no_subject_body">Prova con un\'altra immagine, oppure ritaglia la forma a mano.</string>
+    <string name="cut_message_magic_failed">Il ritaglio magico non è riuscito. Riprova, oppure ritaglia la forma a mano.</string>
+    <string name="cut_message_cut_failed">Il ritaglio non è riuscito. Riprova.</string>
+    <string name="cut_message_empty_selection">La selezione è vuota. Disegna un\'area più grande.</string>
+    <string name="cut_message_rotate_failed">Non è stato possibile ruotare l\'immagine.</string>
+    <string name="cut_message_outline_failed">Non è stato possibile disegnare il contorno. Riprova.</string>
+
+    <string name="text_title">Testo e contorno</string>
+    <string name="text_save">Salva</string>
+    <string name="text_add">Aggiungi testo</string>
+    <string name="text_empty_hint">Tocca Aggiungi testo per iniziare.</string>
+    <string name="text_style_with_background">Sfondo</string>
+    <string name="text_style_with_stroke">Bordo</string>
+    <string name="text_style_without_background">Semplice</string>
+    <string name="text_style_label">Stile: %1$s</string>
+    <string name="text_font_label">Font: %1$s</string>
+    <string name="text_font_system">Sistema</string>
+    <string name="text_color_cd">Colore %1$d</string>
+    <string name="text_delete_zone_cd">Rilascia qui per eliminare</string>
+    <string name="text_dialog_new_title">Nuovo testo</string>
+    <string name="text_dialog_edit_title">Modifica testo</string>
+    <string name="text_dialog_hint">Testo</string>
+
+    <string name="outline_button">Contorno</string>
+    <string name="outline_dialog_title">Contorno dello sticker</string>
+    <string name="outline_dialog_width">Spessore: %1$d</string>
+    <string name="outline_dialog_color">Colore</string>
+    <string name="outline_dialog_apply">Applica</string>
+    <string name="outline_rendering">Applicazione del contorno…</string>
+
+    <string name="save_progress">Salvataggio in corso…</string>
+    <string name="save_failed_title">Impossibile salvare lo sticker</string>
+    <string name="save_failed_too_large">Il file è troppo grande per WhatsApp, anche con qualità più bassa. Prova con un\'immagine più semplice.</string>
+    <string name="save_failed_too_many">Questo pacchetto ha già 30 sticker.</string>
+    <string name="save_failed_nothing">Aggiungi prima un\'immagine o un testo.</string>
+    <string name="save_failed_storage">Non è stato possibile salvare il file. Controlla lo spazio libero e riprova.</string>
+</resources>
