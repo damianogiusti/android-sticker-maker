@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,8 +74,15 @@ internal fun KeyboardContent(
     onDismissNotice: () -> Unit,
     onSwitchKeyboard: () -> Unit,
 ) {
-    Surface(modifier = Modifier.fillMaxWidth().height(KeyboardHeight), color = MaterialTheme.colorScheme.surface) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    // The IME window draws under the navigation bar on edge-to-edge devices: keep the
+    // background there, but lift the content above the system buttons.
+    Surface(modifier = Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.surface) {
+        Column(
+            modifier = Modifier
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .fillMaxWidth()
+                .height(KeyboardHeight),
+        ) {
             Box(modifier = Modifier.weight(1f)) {
                 when (state) {
                     KeyboardUiState.Loading -> CenteredProgress()
