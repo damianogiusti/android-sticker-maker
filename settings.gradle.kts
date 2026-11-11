@@ -27,4 +27,5 @@ dependencyResolutionManagement {
     }
 }
 
+include(":core-ui")
 include(":domain")
