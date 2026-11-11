@@ -64,7 +64,17 @@ Rules:
 ```bash
 ./gradlew assembleDebug            # build
 ./gradlew testDebugUnitTest :domain:test   # unit tests
+./gradlew :app:assembleRelease     # R8-minified, resource-shrunk release APK
 ```
+
+Release signing reads `keystore.properties` in the repo root (gitignored): `storeFile`,
+`storePassword`, `keyAlias`, `keyPassword`. Without that file the release APK is built unsigned.
+The keystore itself lives outside the repo. Keep it: updates to a published APK need the same key.
+
+R8: libraries ship their own consumer rules (LiteRT, kotlinx.serialization). Add a rule to
+`app/proguard-rules.pro` only for a problem seen in the release build. After changing R8 rules or
+dependencies, smoke-test the release APK: Magic (TFLite), Copy (FileProvider) and restore after
+process death (serialized editor snapshot).
 
 Do not install on physical devices unless the user asks; if asked, always `adb -s <serial>`.
 
