@@ -30,3 +30,4 @@ dependencyResolutionManagement {
 include(":core-ui")
 include(":domain")
 include(":data")
+include(":imaging")
