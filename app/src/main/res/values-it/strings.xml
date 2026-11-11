@@ -1,0 +1,10 @@
+<resources>
+    <string name="action_back">Indietro</string>
+    <string name="about_title">Informazioni</string>
+    <string name="about_version">Versione %1$s</string>
+    <string name="about_privacy">Nessuna pubblicità, nessun tracciamento, nessuna rete. I tuoi sticker restano su questo dispositivo.</string>
+    <string name="about_licenses_fonts">Font</string>
+    <string name="about_licenses_model">Modello di segmentazione</string>
+    <string name="about_model_notice">DeepLab v3 con backbone MobileNetV2 (deeplabv3_257_mv_gpu.tflite), dagli esempi di TensorFlow Lite. Licenza Apache 2.0, https://www.apache.org/licenses/LICENSE-2.0. Usato senza modifiche.</string>
+    <string name="about_licenses_libraries">Librerie open source</string>
+</resources>

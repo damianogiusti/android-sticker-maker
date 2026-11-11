@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name" translatable="false">Sticker Maker</string>
+    <string name="action_back">Back</string>
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_privacy">No ads, no tracking, no network. Your stickers stay on this device.</string>
+    <string name="about_licenses_fonts">Fonts</string>
+    <string name="about_licenses_model">Segmentation model</string>
+    <string name="about_model_notice">DeepLab v3 with a MobileNetV2 backbone (deeplabv3_257_mv_gpu.tflite), from the TensorFlow Lite examples. Licensed under the Apache License 2.0, https://www.apache.org/licenses/LICENSE-2.0. Used unmodified.</string>
+    <string name="about_licenses_libraries">Open-source libraries</string>
+</resources>
