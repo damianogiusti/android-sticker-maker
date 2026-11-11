@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed icon (Android 13+): the system tints this silhouette. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="4" android:strokeLineJoin="round"
+        android:pathData="M37,30 H71 A7,7 0 0 1 78,37 V62 L62,78 H37 A7,7 0 0 1 30,71 V37 A7,7 0 0 1 37,30 Z M78,62 L62,78 L62,62 Z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M41,47 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z M59,47 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 Z" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="4.5" android:strokeLineCap="round"
+        android:pathData="M42,57 Q54,69 66,57" />
+</vector>
