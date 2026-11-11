@@ -5,7 +5,6 @@
     <string name="editor_close">Chiudi</string>
     <string name="editor_try_again">Riprova</string>
     <string name="editor_cancel">Annulla</string>
-    <string name="editor_loading_image">Caricamento dell\'immagine…</string>
 
     <string name="editor_failure_image_title">Impossibile aprire questa immagine</string>
     <string name="editor_failure_image_body">Prova con un\'altra immagine.</string>

@@ -5,7 +5,6 @@
     <string name="editor_close">Close</string>
     <string name="editor_try_again">Try again</string>
     <string name="editor_cancel">Cancel</string>
-    <string name="editor_loading_image">Loading the picture…</string>
 
     <string name="editor_failure_image_title">Cannot open this picture</string>
     <string name="editor_failure_image_body">Try another picture.</string>
