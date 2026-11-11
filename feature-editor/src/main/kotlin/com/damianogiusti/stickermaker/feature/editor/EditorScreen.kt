@@ -1,6 +1,7 @@
 package com.damianogiusti.stickermaker.feature.editor
 
 import android.content.ActivityNotFoundException
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -48,7 +49,8 @@ fun EditorScreen(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                EditorEvent.Copied -> {
+                // From Android 13 the system shows its own clipboard preview, which would cover ours.
+                EditorEvent.Copied -> if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                     // A second Copy replaces the first message instead of queueing behind it.
                     snackbarHostState.currentSnackbarData?.dismiss()
                     launch { snackbarHostState.showSnackbar(copiedMessage) }
